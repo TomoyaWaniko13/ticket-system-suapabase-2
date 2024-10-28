@@ -1,6 +1,6 @@
 'use client';
 
-import { createSupabaseClient } from '@/supabase-utils/client';
+import { createSupabaseClient } from '@/supabase-utils/browserClient';
 import { useEffect } from 'react';
 
 // P.38 Initializing and testing the base Supabase JavaScript client within Next.js
