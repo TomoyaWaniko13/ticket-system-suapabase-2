@@ -11,7 +11,7 @@ import { usePathname } from 'next/navigation';
 const links = [
   { label: 'Ticket List', href: '/tickets' },
   { label: 'Create new Ticket', href: '/tickets/new' },
-  { label: 'Ticket List', href: '/tickets/users' },
+  { label: 'User List', href: '/tickets/users' },
 ];
 
 export default function Nav() {
@@ -21,7 +21,7 @@ export default function Nav() {
     <nav className={'flex justify-between'}>
       <ul className={'flex space-x-3'}>
         {links.map((link) => (
-          <li>
+          <li key={link.label}>
             <Button asChild variant={pathname === link.href ? 'default' : 'outline'}>
               <Link role={'button'} href={link.href}>
                 {link.label}
