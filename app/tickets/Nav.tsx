@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 // P.69 Creating a shared UI layout with navigation elements
+// P.75 Constructing the Ticket Details page
 
 export default function Nav() {
   return (
@@ -17,7 +18,7 @@ export default function Nav() {
         <li>
           <Button asChild>
             <Link role='button' href='/tickets/new'>
-              Ticket List
+              Create new Ticket
             </Link>
           </Button>
         </li>
@@ -32,7 +33,7 @@ export default function Nav() {
       <ul>
         <Button asChild variant={'secondary'}>
           <Link role='button' href='/logout'>
-            User List
+            Log out
           </Link>
         </Button>
       </ul>

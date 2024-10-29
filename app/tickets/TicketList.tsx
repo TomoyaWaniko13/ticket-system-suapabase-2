@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Ticket } from '@/app/tickets/page';
+import Link from 'next/link';
 
 // P.72 Designing the Ticket List page
 
@@ -21,7 +22,9 @@ export function TicketList({ tickets }: Props) {
         {tickets.map((ticket) => (
           <TableRow key={ticket.id}>
             <TableCell>{ticket.id}</TableCell>
-            <TableCell>{ticket.title}</TableCell>
+            <TableCell>
+              <Link href={`/tickets/details/${ticket.id}`}>{ticket.title}</Link>
+            </TableCell>
             <TableCell>{ticket.status}</TableCell>
           </TableRow>
         ))}
