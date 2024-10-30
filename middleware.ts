@@ -1,8 +1,9 @@
 import { getSupabaseReqResClient } from '@/supabase-utils/reqResClient';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // P.47 Using the request/response client in the middleware
 // P.95 Preparing the middleware for authentication
+// P.102 Protecting access to the Ticket Management system
 /**
  * Next.jsのミドルウェア関数
  * すべてのリクエストに対して実行され、Supabaseの認証セッションを確認します
@@ -13,10 +14,23 @@ import { NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   // Supabaseクライアントとレスポンスオブジェクトを初期化
   const { supabase, response } = getSupabaseReqResClient({ request });
-
   // 現在のセッションを取得。これによりクッキーが自動的に更新され、セッションが維持される。
   // セッションが無効な場合は自動的にリフレッシュが試みられる。
-  await supabase.auth.getSession();
+  // P.102 に getSession() のセキュリティーについて書かれています。
+  const session = await supabase.auth.getSession();
+
+  const requestedPath = request.nextUrl.pathname;
+  const sessionUser = session.data?.session?.user;
+
+  if (requestedPath.startsWith('/tickets')) {
+    if (!sessionUser) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  } else if (requestedPath === '/') {
+    if (sessionUser) {
+      return NextResponse.redirect(new URL('/tickets', request.url));
+    }
+  }
 
   // 更新されたクッキーを含むレスポンスを返す
   return response.value;
