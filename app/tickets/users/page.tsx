@@ -31,8 +31,8 @@ export default function UserList() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.map((user) => (
-          <TableRow>
+        {users.map((user, index) => (
+          <TableRow key={index}>
             <TableCell className={`${!user.isAvailable && 'text-red-500'}`}>
               {user.isAvailable ? <IconCheck /> : <IconUserOff />}
               {user.name}
