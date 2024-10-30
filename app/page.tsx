@@ -1,4 +1,5 @@
 'use client';
+import { use } from 'react';
 
 import LoginForm from '@/app/LoginForm';
 
@@ -7,10 +8,11 @@ import LoginForm from '@/app/LoginForm';
 // P.63 Building the login form
 
 type Props = {
-  searchParams: { magicLink: 'yes' | 'no' };
+  searchParams: Promise<{ magicLink: 'yes' | 'no' }>;
 };
 
-const HomePage = ({ searchParams }: Props) => {
+const HomePage = (props: Props) => {
+  const searchParams = use(props.searchParams);
   const wantsMagicLink = searchParams.magicLink === 'yes';
 
   return <LoginForm isPasswordLogin={!wantsMagicLink} />;

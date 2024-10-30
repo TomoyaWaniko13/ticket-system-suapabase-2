@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 // P.78 Adding the comments section to the ticket details
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
-const TicketDetailsPage = ({ params }: Props) => {
+const TicketDetailsPage = async (props: Props) => {
+  const params = await props.params;
   return (
     <>
       <Card>

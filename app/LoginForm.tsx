@@ -1,38 +1,37 @@
 'use client';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import Link from 'next/link';
+import { magicLinkLoginAction, passwordLoginAction } from '@/actions/authActions';
+import { startTransition, useActionState, useRef } from 'react';
+import { PasswordLoginSchema, passwordLoginSchema } from '@/lib/schemas/passwordLoginSchema';
+import { MagicLinkSchema, magicLinkSchema } from '@/app/MagicLinkSchema';
 
 // P.63 Building the login form
 
-const passwordLoginSchema = z.object({
-  email: z.string().email().min(1, { message: 'Email is required' }),
-  password: z.string().min(1, { message: 'password is required' }),
-});
-
-const magicLinkSchema = z.object({
-  email: z.string().email().min(1, { message: 'Email is required' }),
-});
-
-type PasswordLoginSchema = z.infer<typeof passwordLoginSchema>;
-type MagicLinkSchema = z.infer<typeof magicLinkSchema>;
+type LoginSchema = PasswordLoginSchema | MagicLinkSchema;
 
 type Props = {
   isPasswordLogin: boolean;
 };
 
 const LoginForm = ({ isPasswordLogin }: Props) => {
-  const form = useForm<PasswordLoginSchema | MagicLinkSchema>({
+  // https://www.youtube.com/watch?v=VLk45JBe8L8
+  const [actionState, formAction] = useActionState(isPasswordLogin ? passwordLoginAction : magicLinkLoginAction, { message: '' });
+
+  const form = useForm<LoginSchema>({
     resolver: zodResolver(isPasswordLogin ? passwordLoginSchema : magicLinkSchema),
     mode: 'onTouched',
-    defaultValues: isPasswordLogin ? { email: '', password: '' } : { email: '' },
+    defaultValues: isPasswordLogin
+      ? // actionStateのフィールドがあれば展開。もし、fieldsが未定義だったりnullの場合、空のオブジェクトを使用します。
+        { email: '', password: '', ...(actionState?.fields ?? {}) }
+      : { email: '', ...(actionState?.fields ?? {}) },
   });
 
   const {
@@ -43,25 +42,45 @@ const LoginForm = ({ isPasswordLogin }: Props) => {
     formState: { isValid, isSubmitting, errors },
   } = form;
 
-  const onSubmit = async (values: PasswordLoginSchema | MagicLinkSchema) => {
-    try {
-      // 認証処理をここに実装
-      // 例: await signIn(values.email, values.password);
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // デモ用の遅延
-      setError('root', { type: 'manual', message: 'Login failed. Please try again.' });
-      console.log(values);
-    } catch (error) {
-      console.error('Login error:', error);
-      // エラーハンドリング
-      setError('root', { type: 'manual', message: 'Login failed. Please try again.' });
-    }
-  };
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <div className={'min-h-screen flex items-center justify-center'}>
       <Card className={'w-full max-w-[480px] p-5'}>
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className='w-full space-y-6'>
+          {actionState?.message !== '' && !actionState.issues && <div className='text-red-500'>{actionState.message}</div>}
+          {actionState?.issues && (
+            <div className='text-red-500'>
+              <ul>
+                {actionState.issues.map((issue) => (
+                  <li key={issue} className='flex gap-1'>
+                    <X fill='red' />
+                    {issue}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <form
+            ref={formRef}
+            className='space-y-8'
+            action={formAction}
+            onSubmit={(event) => {
+              // ブラウザのデフォルトのフォーム送信を停止
+              event.preventDefault();
+              // フォームのバリデーションを実行。バリデーションが成功した場合のみ、この中の処理が実行される
+              // 最後の (event) により、handleSubmit()が返した関数を実行します。
+              handleSubmit(() => {
+                // startTransitionは「ちょっと待って、これから重い処理をするよ」とReactに教えるための仕組み
+                // これにより、Server Actionの実行中もUIが固まらず、ユーザーは他の操作ができる
+                // フォームの送信処理を安全に行える環境を作る
+                startTransition(() => {
+                  // フォームデータを作成してServer Actionに送信
+                  formAction(new FormData(formRef.current!));
+                });
+              })(event);
+            }}
+          >
             <FormField
               control={control}
               name='email'
