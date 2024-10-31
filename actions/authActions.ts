@@ -7,12 +7,9 @@ import { magicLinkLoginSchema } from '@/lib/schemas/magincLinkLoginSchema';
 import { ZodIssue } from 'zod';
 import { redirect } from 'next/navigation';
 import { ActionResult } from '@/types';
+import { getSupabaseAdminClient } from '@/supabase-utils/adminClient';
 
 export const passwordLoginAction = async (prevState: ActionResult, formData: FormData): Promise<ActionResult> => {
-  // Supabase における Auth について:
-  // https://supabase.com/docs/guides/auth/server-side/nextjs?queryGroups=router&router=app
-  const supabase = await getSupabaseCookiesUtilClient();
-
   // { email: 'list@gmail.com', password: 'fafa' }
   const formDataEntries = Object.fromEntries(formData);
 
@@ -37,6 +34,10 @@ export const passwordLoginAction = async (prevState: ActionResult, formData: For
     };
   }
 
+  // Supabase における Auth について:
+  // https://supabase.com/docs/guides/auth/server-side/nextjs?queryGroups=router&router=app
+  const supabase = await getSupabaseCookiesUtilClient();
+
   const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -49,9 +50,8 @@ export const passwordLoginAction = async (prevState: ActionResult, formData: For
 };
 
 // P.114 Sending magic links with signInWithOtp() on the frontend
+// P.125 Requesting an OTP from the Auth Service
 export const magicLinkLoginAction = async (prevState: ActionResult, formData: FormData): Promise<ActionResult> => {
-  const supabase = await getSupabaseCookiesUtilClient();
-
   const formDataEntries = Object.fromEntries(formData);
   const parsed = magicLinkLoginSchema.safeParse(formDataEntries);
 
@@ -63,23 +63,21 @@ export const magicLinkLoginAction = async (prevState: ActionResult, formData: Fo
       // toString()メソッドで確実に文字列に変換しています
       fields[key] = formDataEntries[key].toString();
     }
-    return {
-      message: 'Invalid form data',
-      fields,
-      issues: parsed.error.issues.map((issue: ZodIssue) => issue.message),
-    };
+    return { message: 'Invalid form data', fields, issues: parsed.error.issues.map((issue: ZodIssue) => issue.message) };
   }
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email,
-    options: { shouldCreateUser: false },
-  });
+  const supabaseAdmin = getSupabaseAdminClient();
+
+  const email = parsed.data.email;
+
+  const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({ email, type: 'magiclink' });
 
   if (error) return { message: 'Failed to send the magic link email. Please try again later.' };
 
+  const { hashed_token } = linkData.properties;
+
   revalidatePath('/', 'layout');
   redirect('/magic-thanks');
-  return { message: 'success' };
 };
 
 // P.107 Logging out using the backend
