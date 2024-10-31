@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/supabase-utils/browserClient';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { signOutAction } from '@/actions/authActions';
 
 // P.69 Creating a shared UI layout with navigation elements
 // P.75 Constructing the Ticket Details page
 // P.86 Enhancing the navigation component
 // P.104 Logging out using the frontend
+// P.107 Logging out using the backend
 
 const links = [
   { label: 'Ticket List', href: '/tickets' },
@@ -37,6 +39,8 @@ export default function Nav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const formRef = useRef<HTMLFormElement>(null);
+
   return (
     <nav className={'flex justify-between'}>
       <ul className={'flex space-x-3'}>
@@ -49,18 +53,11 @@ export default function Nav() {
         ))}
       </ul>
       <ul>
-        <Button asChild variant={'secondary'}>
-          <Link
-            href='/logout'
-            prefetch={false}
-            onClick={(event) => {
-              event.preventDefault();
-              supabase.auth.signOut();
-            }}
-          >
+        <form ref={formRef} action={signOutAction}>
+          <Button variant='secondary' type='submit'>
             Log out
-          </Link>
-        </Button>
+          </Button>
+        </form>
       </ul>
     </nav>
   );

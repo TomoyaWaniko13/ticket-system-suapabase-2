@@ -6,17 +6,9 @@ import { passwordLoginSchema } from '@/lib/schemas/passwordLoginSchema';
 import { magicLinkLoginSchema } from '@/lib/schemas/magincLinkLoginSchema';
 import { ZodIssue } from 'zod';
 import { redirect } from 'next/navigation';
+import { ActionResult } from '@/types';
 
-// P.99 Implementing the login functionality in our app
-// https://www.youtube.com/watch?v=VLk45JBe8L8
-
-export type LoginFormState = {
-  message: string;
-  fields?: Record<string, string>;
-  issues?: string[];
-};
-
-export async function passwordLoginAction(prevState: LoginFormState, formData: FormData): Promise<LoginFormState> {
+export const passwordLoginAction = async (prevState: ActionResult, formData: FormData): Promise<ActionResult> => {
   // Supabase における Auth について:
   // https://supabase.com/docs/guides/auth/server-side/nextjs?queryGroups=router&router=app
   const supabase = await getSupabaseCookiesUtilClient();
@@ -47,9 +39,9 @@ export async function passwordLoginAction(prevState: LoginFormState, formData: F
 
   revalidatePath('/', 'layout');
   redirect('/tickets');
-}
+};
 
-export async function magicLinkLoginAction(prevState: LoginFormState, formData: FormData): Promise<LoginFormState> {
+export const magicLinkLoginAction = async (prevState: ActionResult, formData: FormData): Promise<ActionResult> => {
   const supabase = await getSupabaseCookiesUtilClient();
 
   const formDataEntries = Object.fromEntries(formData);
@@ -61,4 +53,18 @@ export async function magicLinkLoginAction(prevState: LoginFormState, formData: 
 
   revalidatePath('/', 'layout');
   return { message: 'success' };
-}
+};
+
+// P.107 Logging out using the backend
+export const signOutAction = async () => {
+  const supabase = await getSupabaseCookiesUtilClient();
+  const { error } = await supabase.auth.signOut();
+  console.log(error);
+
+  revalidatePath('/', 'layout');
+  redirect('/');
+};
+
+export const testAction = async () => {
+  console.log('this');
+};
