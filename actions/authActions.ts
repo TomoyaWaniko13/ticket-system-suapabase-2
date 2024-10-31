@@ -30,10 +30,17 @@ export const passwordLoginAction = async (prevState: ActionResult, formData: For
       // toString()メソッドで確実に文字列に変換しています
       fields[key] = formDataEntries[key].toString();
     }
-    return { message: 'Invalid form data', fields, issues: parsed.error.issues.map((issue: ZodIssue) => issue.message) };
+    return {
+      message: 'Invalid form data',
+      fields,
+      issues: parsed.error.issues.map((issue: ZodIssue) => issue.message),
+    };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
 
   if (error) return { message: 'Your email or password is wrong' };
 
@@ -41,17 +48,37 @@ export const passwordLoginAction = async (prevState: ActionResult, formData: For
   redirect('/tickets');
 };
 
+// P.114 Sending magic links with signInWithOtp() on the frontend
 export const magicLinkLoginAction = async (prevState: ActionResult, formData: FormData): Promise<ActionResult> => {
   const supabase = await getSupabaseCookiesUtilClient();
 
   const formDataEntries = Object.fromEntries(formData);
-  const parsed = magicLinkLoginSchema.safeParse(formData);
+  const parsed = magicLinkLoginSchema.safeParse(formDataEntries);
 
-  // const { error } = await supabase.auth.signInWithPassword(data);
+  if (!parsed.success) {
+    const fields: Record<string, string> = {};
 
-  // if (error) return { message: 'error' };
+    for (const key of Object.keys(formDataEntries)) {
+      // formDataEntries[key] は任意の型（この場合はFormDataEntryValue）かもしれませんが
+      // toString()メソッドで確実に文字列に変換しています
+      fields[key] = formDataEntries[key].toString();
+    }
+    return {
+      message: 'Invalid form data',
+      fields,
+      issues: parsed.error.issues.map((issue: ZodIssue) => issue.message),
+    };
+  }
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    options: { shouldCreateUser: false },
+  });
+
+  if (error) return { message: 'Failed to send the magic link email. Please try again later.' };
 
   revalidatePath('/', 'layout');
+  redirect('/magic-thanks');
   return { message: 'success' };
 };
 

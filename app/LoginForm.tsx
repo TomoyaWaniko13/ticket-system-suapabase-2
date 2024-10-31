@@ -9,11 +9,14 @@ import { Card } from '@/components/ui/card';
 import { Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { magicLinkLoginAction, passwordLoginAction } from '@/actions/authActions';
-import { startTransition, useActionState, useRef } from 'react';
+import { startTransition, useActionState, useEffect, useRef } from 'react';
 import { PasswordLoginSchema, passwordLoginSchema } from '@/lib/schemas/passwordLoginSchema';
 import { MagicLinkSchema, magicLinkSchema } from '@/app/MagicLinkSchema';
+import { getSupabaseBrowserClient } from '@/supabase-utils/browserClient';
+import { useRouter } from 'next/navigation';
 
 // P.63 Building the login form
+// P.114 Sending magic links with signInWithOtp() on the frontend
 
 type LoginSchema = PasswordLoginSchema | MagicLinkSchema;
 
@@ -22,6 +25,9 @@ type Props = {
 };
 
 const LoginForm = ({ isPasswordLogin }: Props) => {
+  const supabase = getSupabaseBrowserClient();
+  const router = useRouter();
+
   // https://www.youtube.com/watch?v=VLk45JBe8L8
   const [actionState, formAction] = useActionState(isPasswordLogin ? passwordLoginAction : magicLinkLoginAction, { message: '' });
 
@@ -43,6 +49,21 @@ const LoginForm = ({ isPasswordLogin }: Props) => {
   } = form;
 
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    // 分割代入（Destructuring assignment） を使用しています。
+    // onAuthStateChange() について:
+    // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        router.push('/tickets');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className={'min-h-screen flex items-center justify-center'}>
