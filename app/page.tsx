@@ -1,21 +1,18 @@
-'use client';
-import { use } from 'react';
-
-import LoginForm from '@/app/LoginForm';
+import MagicLinkForm from '@/components/login/MagicLinkForm';
+import PasswordLoginForm from '@/components/login/PasswordLoginForm';
 
 // P.38 Initializing and testing the base Supabase JavaScript client within Next.js
 // P.42 Utilizing createBrowserClient on the frontend
 // P.63 Building the login form
 
-type Props = {
-  searchParams: Promise<{ magicLink: 'yes' | 'no' }>;
-};
+// Dynamic APIs are Asynchronous:
+// https://nextjs.org/docs/messages/sync-dynamic-apis
 
-const HomePage = (props: Props) => {
-  const searchParams = use(props.searchParams);
-  const wantsMagicLink = searchParams.magicLink === 'yes';
+const HomePage = async ({ searchParams }: { searchParams: { magicLink: string } }) => {
+  const { magicLink } = await searchParams;
+  const isMagicLink = magicLink === 'yes';
 
-  return <LoginForm isPasswordLogin={!wantsMagicLink} />;
+  return isMagicLink ? <MagicLinkForm /> : <PasswordLoginForm />;
 };
 
 export default HomePage;

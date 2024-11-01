@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { Database } from '@/supabase';
 
 // P.48 Creating Supabase backend clients with App Router
 // P.55 Using Supabase with TypeScript
@@ -8,7 +7,7 @@ import { Database } from '@/supabase';
 export const getSupabaseCookiesUtilClient = async () => {
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
